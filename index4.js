@@ -4,16 +4,33 @@ document.addEventListener("DOMContentLoaded", function () {
     let usersData = [];
     const urlApi = "http://localhost:3000/users";
     
-    fetch(urlApi)
-    .then((respose) => respose.json())
-    .then(data => {
-        data.forEach((user) => {
-            addUserToList(user.name,user.address,user.email,user.id);
+    function getUsersApi(){
+        fetch(urlApi)
+        .then((respose) => respose.json())
+        .then(data => {
+            usersData = data;
+            usersData.forEach((user) => {
+                addUserToList(user.name,user.address,user.email,user.id);
+            })
         })
-    })
-    .catch(err => {
-        console.log('Error en la petición HTTP: '+err.message);
-    });
+        .catch(err => {
+            console.log('Error en la petición HTTP: '+err.message);
+        });
+    }
+
+    function comprobarMail(user) {
+        const mail = user.email;
+    
+        fetch(urlApi + "?email=" + mail)
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.length == 0) {
+                    addUserApi(user);
+                }else{
+                    alert("Ya existe un usuario con ese mail");
+                }
+            });
+    }
 
     function addUserApi(user){
         fetch(urlApi,{
@@ -23,13 +40,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 "Content-type" : "application/json"
             }
         })
-        .then(response => {
-            if(response.ok){
-                return response.json();
-            }
-            return Promise.reject(response)
-        })
-        .then(newUser =>{
+        .then(response => response.json())
+        .then(newUser => {
             addUserToList(newUser.name,newUser.address,newUser.email,newUser.id);
         })
         .catch(err => console.log(err));
@@ -49,21 +61,24 @@ document.addEventListener("DOMContentLoaded", function () {
         .catch(err => console.log(err));
     }
     
-    function replaceUserApi(id,user){
-        const peticion = new XMLHttpRequest();
-        peticion.withCredentials = true;
-        peticion.open('PUT',urlApi + "/" + id);
-        peticion.setRequestHeader('Content-type', 'application/json');
-        peticion.addEventListener("load",function(){
-            if(peticion.status == 200){
-                console.log("200OK")
+    function replaceUserApi(id,user,listItem,editingIndex){
+        fetch(urlApi + "/" + id,{
+            method : "PUT",
+            body : JSON.stringify(user),
+            headers : {
+              "Content-type":"application/json"
+            }  
+          })
+          .then(response => {
+            if(response.ok){
+                userList.replaceChild(listItem, userList.children[editingIndex]);
+                userForm.removeAttribute("data-editing");
+                userForm.querySelector("button[type='submit']").textContent = "Agregar Usuario";
             }
-        });
-        peticion.send(JSON.stringify(user));
+          })
+          .catch(err => console.log(err));
     }
     
-    //getUsersApi();
-
     // Función para validar email
     function validateEmail(email) {
         const regex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
@@ -128,6 +143,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Manejar el envío del formulario (Agregar o Editar usuario)
     userForm.addEventListener("submit", function (event) {
+        //event.preventDefault();
         const name = userForm.elements.name.value;
         const address = userForm.elements.address.value;
         const email = userForm.elements.email.value;
@@ -141,29 +157,21 @@ document.addEventListener("DOMContentLoaded", function () {
                         user.name = name;
                         user.address = address;
                         user.email = email;
-                        replaceUserApi(user.id,{name,address,email});
+                        replaceUserApi(user.id,{name,address,email},listItem,editingIndex);
                     }
                     return user;
                 });
-
-                // Reemplaza el elemento existente en el índice con el nuevo elemento
-                userList.replaceChild(listItem, userList.children[editingIndex]);
-                userForm.removeAttribute("data-editing");
-                userForm.querySelector("button[type='submit']").textContent = "Agregar Usuario";
                 
+                //Reemplaza el elemento existente en el índice con el nuevo elemento
+                //userList.replaceChild(listItem, userList.children[editingIndex]);
+                //userForm.removeAttribute("data-editing");
+                //userForm.querySelector("button[type='submit']").textContent = "Agregar Usuario";
             } else {
-                if(usersData)
-                if (usersData.some(user => user.email === email)) {
-                    alert('El email especificado ya existe en la lista');
-                    return;
-                }else{
-                    usersData.push({name,address,email});
-                    const user = {name, address, email}
-                    addUserApi(user);
-                }
-
+                usersData.push({name,address,email});
+                const user = {name, address, email}
+                addUserApi(user);
             }
-            userForm.reset();
+            //userForm.reset();
         } else {
             alert('Alguno de los campos no es correcto');
         }
@@ -175,4 +183,7 @@ document.addEventListener("DOMContentLoaded", function () {
         editUser(event);
     });
 
+    getUsersApi();
 });
+
+
