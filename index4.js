@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
     
     function getUsersApi(){
         fetch(urlApi)
-        .then((respose) => respose.json())
+        .then(respose => respose.json())
         .then(data => {
             usersData = data;
             usersData.forEach((user) => {
