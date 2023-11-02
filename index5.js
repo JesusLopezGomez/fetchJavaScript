@@ -6,59 +6,76 @@ const urlApi = "http://localhost:3000/users";
 let users = [];
 
 async function getUsersApi(){
-    const response = await fetch(urlApi);
-    const dataUsers = await response.json();
-    users = dataUsers;
-    users.forEach(user => {
-        addUserList(user);
-    }); 
+    try{        
+        const response = await fetch(urlApi);
+        const dataUsers = await response.json();
+        users = dataUsers;
+        users.forEach(user => {
+            addUserList(user);
+        }); 
+    }catch(err){
+        console.log(err);
+    }
 }
 
 async function addUserApi(user){
-    const response = await fetch(urlApi + "?email=" + user.email);
-    const dataReponse = await response.json();
-    
-    if(!dataReponse[0]){
-        const responsePost = await fetch(urlApi,{
-            method : "POST",
-            body : JSON.stringify(user),
-            headers : {
-                "Content-type":"application/json"
+    try{
+        const response = await fetch(urlApi + "?email=" + user.email);
+        const dataReponse = await response.json();
+        
+        if(!dataReponse[0]){
+            const responsePost = await fetch(urlApi,{
+                method : "POST",
+                body : JSON.stringify(user),
+                headers : {
+                    "Content-type":"application/json"
+                }
+            })
+            if(responsePost.ok){
+                const newUser = await responsePost.json();
+                addUserList(newUser);
             }
-        })
-        if(responsePost.ok){
-            const newUser = await responsePost.json();
-            addUserList(newUser);
+        }else{
+            alert("Ya existe un usuario con ese email.");
         }
-    }else{
-        alert("Ya existe un usuario con ese email.");
+    }catch(err){
+        console.log(err);
     }
 }
 
 async function deleteUserApi(id,listItem){
-    const response = await fetch(urlApi + "/" + id,{
-        method : "DELETE",
-        headers : {"Content-type":"application/json"}
-    });
-    if(response.ok) listItem.remove();
+    try{
+        const response = await fetch(urlApi + "/" + id,{
+            method : "DELETE",
+            headers : {"Content-type":"application/json"}
+        });
+        if(response.ok) listItem.remove();
+    }catch(err){
+        console.log(err);
+    }
 }
 
 async function updateUserApi(user){
-    const reponseGet = await fetch(urlApi + "?email=" + user.email);
-    const dataGet = await reponseGet.json();
-
-    if(dataGet.some(userMail => userMail.id !== user.id)){
-        alert("Ya existe un usuario con ese email");
-    }else{
-        const reponsePut = await fetch(urlApi + "/" + user.id,{
-            method : "PUT",
-            body : JSON.stringify(user),
-            headers : {"Content-type":"application/json"}
-        })
-        if(reponsePut.ok){
-            location.reload();
+    try{
+        const reponseGet = await fetch(urlApi + "?email=" + user.email);
+        const dataGet = await reponseGet.json();
+    
+        if(dataGet.some(userMail => userMail.id !== user.id)){
+            alert("Ya existe un usuario con ese email");
+        }else{
+            const reponsePut = await fetch(urlApi + "/" + user.id,{
+                method : "PUT",
+                body : JSON.stringify(user),
+                headers : {"Content-type":"application/json"}
+            })
+            if(reponsePut.ok){
+                location.reload();
+            }
         }
+    }catch(err){
+        console.log(err);
     }
+    
 }
 
 getUsersApi();
